@@ -196,21 +196,49 @@ async function startTranscription() {
 async function transcribeWithFal(apiKey) {
   const falModel = modelSelect.value;
   const language = languageSelect.value;
+  const contentType = selectedFile.type || "audio/mp4";
 
-  // Schritt 1: Datei als Data-URL lesen (Base64)
-  updateProgress(10, "Datei wird vorbereitet...");
-  const dataUrl = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Datei konnte nicht gelesen werden"));
-    reader.readAsDataURL(selectedFile);
+  // Schritt 1: Upload initiieren
+  updateProgress(10, "Upload wird vorbereitet...");
+  const initResponse = await fetch(
+    "https://rest.fal.ai/storage/upload/initiate?storage_type=fal-cdn-v3",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Key ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file_name: selectedFile.name,
+        content_type: contentType,
+      }),
+    }
+  );
+
+  if (!initResponse.ok) {
+    const errText = await initResponse.text();
+    throw new Error(`Upload-Init fehlgeschlagen: ${errText}`);
+  }
+
+  const { upload_url, file_url } = await initResponse.json();
+
+  // Schritt 2: Datei hochladen
+  updateProgress(30, "Datei wird hochgeladen...");
+  const uploadResponse = await fetch(upload_url, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: selectedFile,
   });
 
-  // Schritt 2: Direkt an fal.ai senden
-  updateProgress(30, "Transkription läuft...");
+  if (!uploadResponse.ok) {
+    throw new Error(`Datei-Upload fehlgeschlagen (${uploadResponse.status})`);
+  }
+
+  // Schritt 3: Transkription starten
+  updateProgress(50, "Transkription läuft...");
 
   const input = {
-    audio_url: dataUrl,
+    audio_url: file_url,
     task: "transcribe",
     chunk_level: "segment",
     version: "3",
