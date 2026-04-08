@@ -13,6 +13,13 @@ export default async (req) => {
       );
     }
 
+    // Debug: Key-Info loggen
+    const keyLen = api_key.length;
+    const keyStart = api_key.substring(0, 8);
+    const keyEnd = api_key.substring(api_key.length - 4);
+    const hasColon = api_key.includes(":");
+    console.log(`fal key debug: len=${keyLen} start=${keyStart} end=${keyEnd} colon=${hasColon}`);
+
     const response = await fetch(
       "https://rest.fal.ai/storage/upload/initiate?storage_type=fal-cdn-v3",
       {
@@ -29,6 +36,16 @@ export default async (req) => {
     );
 
     const data = await response.text();
+
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify({
+          error: data,
+          debug: { keyLen, keyStart, keyEnd, hasColon },
+        }),
+        { status: response.status, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(data, {
       status: response.status,
