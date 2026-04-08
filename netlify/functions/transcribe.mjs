@@ -1,6 +1,9 @@
 export default async (req) => {
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -16,10 +19,23 @@ export default async (req) => {
       );
     }
 
+    // File-Größe prüfen (Netlify Function Limit ~20MB)
+    const fileSize = audioFile.size;
+    if (fileSize > 20 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({
+          error: `Datei zu groß (${(fileSize / 1024 / 1024).toFixed(1)} MB). Maximum: 20 MB pro Chunk.`,
+        }),
+        { status: 413, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const groqForm = new FormData();
     groqForm.append("file", audioFile, audioFile.name || "audio.mp3");
     groqForm.append("model", "whisper-large-v3");
-    groqForm.append("language", language);
+    if (language) {
+      groqForm.append("language", language);
+    }
     groqForm.append("response_format", "verbose_json");
 
     const response = await fetch(
@@ -33,17 +49,31 @@ export default async (req) => {
       }
     );
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       return new Response(
         JSON.stringify({
-          error: `Groq API Fehler (${response.status}): ${errorText}`,
+          error: `Groq API Fehler (${response.status}): ${responseText}`,
         }),
         { status: response.status, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const result = await response.json();
+    // Sicherstellen dass die Antwort gültiges JSON ist
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      return new Response(
+        JSON.stringify({
+          error: "Groq hat eine ungültige Antwort gesendet.",
+          raw: responseText.substring(0, 500),
+        }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { "Content-Type": "application/json" },
