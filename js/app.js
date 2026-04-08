@@ -198,6 +198,9 @@ async function transcribeWithFal(apiKey) {
   const language = languageSelect.value;
   const contentType = selectedFile.type || "audio/mp4";
 
+  // Debug: Key prüfen
+  console.log("fal.ai Key Länge:", apiKey.length, "Hat Doppelpunkt:", apiKey.includes(":"));
+
   // Schritt 1: Upload initiieren
   updateProgress(10, "Upload wird vorbereitet...");
   const initResponse = await fetch(
@@ -217,7 +220,7 @@ async function transcribeWithFal(apiKey) {
 
   if (!initResponse.ok) {
     const errText = await initResponse.text();
-    throw new Error(`Upload-Init fehlgeschlagen: ${errText}`);
+    throw new Error(`Upload-Init fehlgeschlagen (Key: ${apiKey.substring(0,8)}...): ${errText}`);
   }
 
   const { upload_url, file_url } = await initResponse.json();
