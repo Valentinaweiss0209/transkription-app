@@ -45,6 +45,7 @@ if (savedFalKey) {
 }
 
 updateProviderUI();
+updateModelOptions();
 updateStartButton();
 
 // --- Provider Switch ---
