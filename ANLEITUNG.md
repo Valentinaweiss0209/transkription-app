@@ -1,14 +1,15 @@
 # Transkription App — Bauanleitung für Maestras
 
-Deine eigene Transkriptions-App: Audio & Video zu Text, kostenlos, in Sekunden.
+Deine eigene Transkriptions-App: Audio & Video zu Text — blitzschnell, für wenige Cent.
 
 ---
 
 ## Was du brauchst
 
-1. **Groq API-Key** (kostenlos) → [console.groq.com](https://console.groq.com)
+1. **fal.ai API-Key** (~1 Cent pro Stunde Audio) → [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys)
 2. **GitHub Account** (kostenlos) → [github.com](https://github.com)
 3. **Netlify Account** (kostenlos) → [netlify.com](https://app.netlify.com)
+4. Optional: **Groq API-Key** (kostenlos, aber mit Limits) → [console.groq.com](https://console.groq.com)
 
 Zeitaufwand: 5–10 Minuten (Weg A) oder ca. 60 Minuten (Weg B)
 
@@ -16,14 +17,16 @@ Zeitaufwand: 5–10 Minuten (Weg A) oder ca. 60 Minuten (Weg B)
 
 ## Weg A: Fork & Deploy (schnell, 5 Minuten)
 
-Du kopierst die fertige App und veröffentlichst sie unter deiner eigenen URL.
+Du kopierst die fertige App und veröffentlichst sie unter deiner eigenen URL. Kein Code schreiben nötig.
 
-### Schritt 1: Groq API-Key holen
+### Schritt 1: fal.ai API-Key holen
 
-1. Gehe auf [console.groq.com](https://console.groq.com)
-2. Registriere dich (kostenlos, keine Kreditkarte nötig)
-3. Klicke links auf **API Keys** → **Create API Key**
-4. Kopiere den Key (fängt mit `gsk_` an) — den brauchst du später in der App
+1. Gehe auf [fal.ai](https://fal.ai) und erstelle einen Account
+2. Gehe auf [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys)
+3. Klicke **Add Key** → Name vergeben → **Create Key**
+4. **WICHTIG: Kopiere den vollständigen Key SOFORT** — er wird nur einmal angezeigt!
+5. Der Key besteht aus zwei Teilen mit einem `:` in der Mitte, z.B. `abc123-def:xyz789secret`
+6. Speichere ihn sicher (z.B. im Passwort-Manager)
 
 ### Schritt 2: Repository forken
 
@@ -45,10 +48,13 @@ Du kopierst die fertige App und veröffentlichst sie unter deiner eigenen URL.
 ### Schritt 4: App nutzen
 
 1. Öffne deine neue URL
-2. Gib deinen Groq API-Key ein → Speichern
-3. Ziehe eine Audio- oder Videodatei rein
-4. Klicke **Transkription starten**
-5. Fertig — dein Transkript erscheint und kann als .txt heruntergeladen werden
+2. Anbieter: **fal.ai** ist vorausgewählt (empfohlen)
+3. Gib deinen fal.ai Key ein → **Speichern**
+4. Ziehe eine Audio- oder Videodatei rein (Drag & Drop oder klicken)
+5. Sprache wählen (Standard: Deutsch)
+6. Optional: Timestamps aktivieren
+7. Klicke **Transkription starten**
+8. Fertig — Transkript erscheint, kann kopiert oder als .txt heruntergeladen werden
 
 ### Optional: URL anpassen
 
@@ -56,52 +62,63 @@ In Netlify unter **Site configuration** → **Change site name** kannst du die U
 
 ---
 
-## Weg B: Selbst bauen mit Claude Code (Lernprojekt, ~60 Min)
+## Weg B: Selbst bauen mit Claude (Lernprojekt, ~60 Min)
 
-Du baust die App Schritt für Schritt mit Claude Code. Maximaler Lerneffekt!
+Du baust die App Schritt für Schritt mit Claude (Desktop App oder Claude Code). Maximaler Lerneffekt!
 
 ### Vorbereitung
 
-1. **Groq API-Key** holen (siehe Weg A, Schritt 1)
-2. **GitHub Account** anlegen und in Claude Code einloggen:
-   ```
-   ! gh auth login -p https -w
-   ```
-3. **Netlify Account** anlegen und in Claude Code einloggen:
-   ```
-   ! npm install -g netlify-cli
-   ! netlify login
-   ```
+1. **fal.ai API-Key** holen (siehe Weg A, Schritt 1)
+2. **GitHub Account** anlegen
+3. **Netlify Account** anlegen
 
 ### Prompt 1: Projekt erstellen
 
-Kopiere diesen Prompt in Claude Code:
+Kopiere diesen Prompt in Claude:
 
-> Erstelle einen neuen Ordner `transkription-app` mit einem Git-Repo. Erstelle darin folgende Dateien:
+> Erstelle mir eine Transkriptions-Web-App. Die App soll:
 >
-> 1. `index.html` — Eine schöne, moderne Single-Page-App mit:
->    - Eingabefeld für einen Groq API-Key (wird in localStorage gespeichert)
->    - Drag & Drop Upload für Audio/Video-Dateien (MP3, MP4, M4A, WAV)
->    - Sprachauswahl (Deutsch, Englisch, etc.)
->    - Modellauswahl (Whisper Large v3 und Whisper Large v3 Turbo)
->    - Checkbox für optionale Timestamps
->    - Fortschrittsbalken
->    - Ergebnis-Textarea mit Kopieren- und Download-Button
->    - DSGVO-Hinweis dass Audio an Groq (USA) gesendet wird
+> **Frontend (index.html + css/style.css + js/app.js):**
+> - Anbieter-Auswahl: fal.ai (Standard) und Groq (kostenlose Alternative)
+> - Separates API-Key-Feld je nach Anbieter (Key wird in localStorage gespeichert)
+> - Drag & Drop Upload für Audio/Video-Dateien (MP3, MP4, M4A, WAV, OGG, WEBM)
+> - Sprachauswahl (Deutsch, Englisch, Französisch, etc.)
+> - Modellauswahl (bei fal.ai: Wizper; bei Groq: Whisper Large v3 / Turbo)
+> - Checkbox für optionale Timestamps
+> - Fortschrittsbalken
+> - Ergebnis-Textarea mit Kopieren- und Download-Button (.txt)
+> - DSGVO-Hinweis dass Audio an Server in den USA gesendet wird
+> - Modernes, elegantes Design
 >
-> 2. `css/style.css` — Modernes, elegantes Design
+> **Backend (Netlify Functions):**
+> - `netlify/functions/fal-upload.mjs`: Proxy für fal.ai Storage Upload Init
+>   - POST an https://rest.fal.ai/storage/upload/initiate?storage_type=fal-cdn-v3
+>   - Empfängt api_key, file_name, content_type vom Frontend
+>   - Gibt upload_url und file_url zurück
 >
-> 3. `js/app.js` — Die komplette Logik:
->    - API-Key in localStorage speichern und laden
->    - Datei-Upload per Drag & Drop und Klick
->    - Große Dateien (>24MB) in Chunks aufteilen
->    - Direkte Fetch-Calls an die Groq Whisper API (https://api.groq.com/openai/v1/audio/transcriptions)
->    - Ergebnis anzeigen, kopieren und als .txt downloaden
->    - Bei aktivierten Timestamps: Zeitstempel vor jedem Segment anzeigen
+> - `netlify/functions/fal-transcribe.mjs`: Proxy für fal.ai Transkription
+>   - POST an https://fal.run/{model} (z.B. fal-ai/wizper)
+>   - Empfängt api_key, model, input vom Frontend
+>   - Input enthält: audio_url, task, chunk_level, version, language
 >
-> 4. `netlify.toml` — Minimale Netlify-Konfiguration (publish = ".")
+> **fal.ai Flow (3 Schritte):**
+> 1. Frontend ruft /api/fal-upload auf → bekommt upload_url + file_url
+> 2. Frontend lädt Datei direkt an upload_url hoch (PUT, kein Auth nötig)
+> 3. Frontend ruft /api/fal-transcribe auf mit file_url → bekommt Transkript
 >
-> 5. `.gitignore` — node_modules, .env, .netlify
+> **Groq Flow:**
+> - Direkt vom Browser an https://api.groq.com/openai/v1/audio/transcriptions
+> - FormData mit file, model, language, response_format
+> - Große Dateien (>24MB) automatisch in Chunks aufteilen
+>
+> **Timestamps:**
+> - fal.ai: data.chunks[].timestamp[0] für Startzeit
+> - Groq: data.segments[].start für Startzeit
+> - Format: [M:SS] oder [H:MM:SS]
+>
+> **Konfiguration:**
+> - netlify.toml mit publish = "." und functions = "netlify/functions"
+> - .gitignore für node_modules, .env, .netlify
 >
 > Halte den Code einfach und gut kommentiert.
 
@@ -109,7 +126,7 @@ Kopiere diesen Prompt in Claude Code:
 
 > Starte einen lokalen Server damit ich die App im Browser testen kann.
 
-Claude Code wird vermutlich `npx serve .` oder `python -m http.server` vorschlagen. Öffne die angezeigte URL im Browser und teste mit einer kurzen Audiodatei.
+Claude wird `npx netlify dev` oder `npx serve .` vorschlagen. Öffne die angezeigte URL im Browser und teste mit einer kurzen Audiodatei.
 
 ### Prompt 3: Auf GitHub & Netlify veröffentlichen
 
@@ -119,11 +136,11 @@ Claude Code wird vermutlich `npx serve .` oder `python -m http.server` vorschlag
 
 Jetzt kannst du die App nach deinen Wünschen anpassen:
 
-> Ändere die Farben zu [deine Farben]. Ändere den Titel zu [dein Titel]. Füge mein Logo ein.
+> Ändere die Farben zu [deine Farben]. Ändere den Titel zu [dein Titel].
 
 Oder:
 
-> Füge eine Option hinzu, die das Transkript als Zusammenfassung formatiert.
+> Füge eine Option hinzu, die das Transkript zusammenfasst.
 
 Jede Änderung deployst du mit:
 
@@ -131,17 +148,32 @@ Jede Änderung deployst du mit:
 
 ---
 
+## Anbieter im Vergleich
+
+| | fal.ai (empfohlen) | Groq (kostenlos) |
+|---|---|---|
+| **Kosten** | ~1 Cent pro Stunde Audio | Kostenlos |
+| **Geschwindigkeit** | 2h Audio in ~10 Sekunden | ~30 Sekunden pro Minute |
+| **Datei-Limit** | Keine praktische Grenze | 25 MB / 2h Audio pro Stunde |
+| **Modell** | Wizper (optimiertes Whisper) | Whisper Large v3 |
+| **Qualität Deutsch** | Ausgezeichnet | Ausgezeichnet |
+| **API-Key** | Besteht aus KEY_ID:KEY_SECRET | Beginnt mit gsk_ |
+
+**Empfehlung:** Starte mit fal.ai — blitzschnell, fast kostenlos, keine Limits.
+
+---
+
 ## Tipps & Tricks
 
-### Groq Rate Limits (kostenloser Free Tier)
+### fal.ai API-Key
+- Der Key besteht aus **zwei Teilen** getrennt durch einen Doppelpunkt: `KEY_ID:KEY_SECRET`
+- Der Secret-Teil wird **nur einmal bei Erstellung** angezeigt — sofort sicher speichern!
+- Keys verwalten: [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys)
+
+### Groq Rate Limits (falls du Groq nutzt)
 - **2 Stunden Audio pro Stunde** — reicht für einen 90-Minuten-Call
 - Limit wird stündlich zurückgesetzt
-- Tipp: **Zero Data Retention** in den [Groq-Einstellungen](https://console.groq.com/settings/data) aktivieren (Datenschutz!)
-
-### Dateigröße
-- Groq akzeptiert max. **25 MB** pro Datei (Free Tier)
-- Die App teilt größere Dateien automatisch auf
-- Tipp: Audio-Dateien (MP3, M4A) sind viel kleiner als Video (MP4)
+- Tipp: **Zero Data Retention** in den [Groq-Einstellungen](https://console.groq.com/settings/data) aktivieren
 
 ### Unterstützte Formate
 MP3, MP4, M4A, WAV, OGG, WEBM
@@ -155,19 +187,31 @@ MP3, MP4, M4A, WAV, OGG, WEBM
 
 ## Häufige Fragen
 
-**Ist das wirklich kostenlos?**
-Ja. Groq Free Tier, GitHub Free, Netlify Free — alles kostenlos.
+**Was kostet das?**
+fal.ai: ~1 Cent pro Stunde Audio. Ein 90-Minuten-Zoom-Call kostet ca. 1,5 Cent. GitHub und Netlify sind kostenlos. Alternativ: Groq ist komplett kostenlos (mit Limits).
 
 **Sieht jemand meinen API-Key?**
 Nein. Der Key ist nur in deinem eigenen Browser gespeichert. Wenn jemand anders deine App-URL öffnet, muss die Person ihren eigenen Key eingeben.
 
 **Was passiert mit meinen Audio-Dateien?**
-Die Datei wird zur Transkription an Groq-Server in den USA gesendet. Mit aktiviertem Zero Data Retention werden keine Daten bei Groq gespeichert.
+Die Datei wird zur Transkription an fal.ai bzw. Groq Server (USA) gesendet. Die Datei wird nach der Verarbeitung nicht dauerhaft gespeichert.
 
 **Wie gut ist die Transkription?**
-Whisper Large v3 ist eines der besten Transkriptionsmodelle weltweit — besonders gut für Deutsch. Nicht perfekt bei starkem Dialekt oder schlechter Audioqualität, aber für Meetings und Gespräche ausgezeichnet.
+Wizper/Whisper Large v3 ist eines der besten Transkriptionsmodelle weltweit — besonders gut für Deutsch. Nicht perfekt bei starkem Dialekt oder schlechter Audioqualität, aber für Meetings und Gespräche ausgezeichnet.
+
+**Kann ich Timestamps einschalten?**
+Ja! Hake die Checkbox "Timestamps anzeigen" an. Dann steht vor jedem Abschnitt die Zeitangabe, z.B. `[1:32] Das nächste Thema ist...`
+
+**Mein fal.ai Key funktioniert nicht?**
+Prüfe: Hast du den **vollständigen** Key kopiert (mit dem `:` in der Mitte)? Der Secret-Teil wird nur einmal angezeigt. Im Zweifel: neuen Key erstellen.
 
 ---
 
-*Gebaut mit Whisper (OpenAI) via Groq API · © 2026 Manuela Ruppert · KI Maestra*
+## Datenschutzhinweis
+
+Die Audio-Datei wird zur Transkription an **fal.ai** bzw. **Groq** (Server in den USA) gesendet. Bei Aufnahmen mit anderen Personen bitte deren Einverständnis einholen.
+
+---
+
+*Gebaut mit Wizper/Whisper via fal.ai & Groq · © 2026 Manuela Ruppert · KI Maestra*
 *Co-Created with Claude Code by Anthropic*
