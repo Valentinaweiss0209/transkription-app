@@ -181,7 +181,8 @@ async function startTranscription() {
       await transcribeWithGroq(apiKey);
     }
   } catch (err) {
-    updateProgress(0, `Fehler: ${err.message}`);
+    const msg = err?.message || err?.detail || JSON.stringify(err) || "Unbekannter Fehler";
+    updateProgress(0, `Fehler: ${msg}`);
     progressText.style.color = "#ef4444";
   } finally {
     startBtn.disabled = false;
@@ -193,6 +194,9 @@ async function startTranscription() {
 // ==========================================
 
 async function transcribeWithFal(apiKey) {
+  if (!window.createFalClient) {
+    throw new Error("fal.ai Client konnte nicht geladen werden. Bitte Seite neu laden.");
+  }
   const fal = window.createFalClient({ credentials: apiKey });
   const falModel = modelSelect.value;
   const language = languageSelect.value;

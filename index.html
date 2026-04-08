@@ -7,8 +7,13 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙</text></svg>">
   <script type="module">
-    import { createFalClient } from "https://esm.sh/@fal-ai/client@1";
-    window.createFalClient = createFalClient;
+    try {
+      const mod = await import("https://esm.sh/@fal-ai/client@1");
+      window.createFalClient = mod.createFalClient;
+      console.log("fal.ai client loaded", typeof window.createFalClient);
+    } catch(e) {
+      console.error("fal.ai client failed to load", e);
+    }
   </script>
 </head>
 <body>
