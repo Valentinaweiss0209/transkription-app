@@ -556,6 +556,21 @@ footer .gradient-bar {
 .footer-brand {
   color: var(--berry);
   font-weight: 700;
+  text-decoration: none;
+}
+
+.footer-brand:hover {
+  text-decoration: underline;
+}
+
+.footer-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.footer-link:hover {
+  color: var(--berry);
 }
 
 /* Responsive */
