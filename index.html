@@ -19,18 +19,35 @@
       <div class="gradient-bar"></div>
     </header>
 
-    <!-- API Key -->
+    <!-- Provider & API Key -->
     <section id="setup-section" class="card fade-in">
       <div class="card-header">
         <span class="step-badge">1</span>
-        <h2>Groq API-Key</h2>
+        <h2>Anbieter & API-Key</h2>
       </div>
-      <p>Hol dir deinen kostenlosen Key auf <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a></p>
-      <div class="input-row">
-        <input type="password" id="api-key" placeholder="gsk_..." autocomplete="off">
-        <button id="save-key-btn" class="btn btn-secondary">Speichern</button>
+      <div class="option-group" style="margin-bottom: 1rem;">
+        <label for="provider">Anbieter</label>
+        <select id="provider">
+          <option value="fal" selected>fal.ai — blitzschnell, ~1 Cent/Stunde</option>
+          <option value="groq">Groq — kostenlos, max. 2h Audio/Stunde</option>
+        </select>
       </div>
-      <p id="key-status" class="status-text"></p>
+      <div id="fal-key-section">
+        <p>Hol dir deinen Key auf <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noopener">fal.ai/dashboard/keys</a></p>
+        <div class="input-row">
+          <input type="password" id="fal-api-key" placeholder="fal-Key eingeben..." autocomplete="off">
+          <button id="save-fal-key" class="btn btn-secondary">Speichern</button>
+        </div>
+        <p id="fal-key-status" class="status-text"></p>
+      </div>
+      <div id="groq-key-section" class="hidden">
+        <p>Hol dir deinen kostenlosen Key auf <a href="https://console.groq.com" target="_blank" rel="noopener">console.groq.com</a></p>
+        <div class="input-row">
+          <input type="password" id="groq-api-key" placeholder="gsk_..." autocomplete="off">
+          <button id="save-groq-key" class="btn btn-secondary">Speichern</button>
+        </div>
+        <p id="groq-key-status" class="status-text"></p>
+      </div>
     </section>
 
     <!-- Upload -->
@@ -102,7 +119,7 @@
       <div class="info-icon">ℹ️</div>
       <div class="info-content">
         <p class="info-title">Datenschutzhinweis</p>
-        <p class="info-text">Die Audio-Datei wird zur Transkription an <strong>Groq (USA)</strong> gesendet. Bei Aufnahmen mit anderen Personen bitte deren Einverständnis einholen. In den <a href="https://console.groq.com/settings/data" target="_blank" rel="noopener">Groq-Einstellungen</a> kann <strong>Zero Data Retention</strong> aktiviert werden — dann werden keine Daten gespeichert.</p>
+        <p class="info-text">Die Audio-Datei wird zur Transkription an <strong>fal.ai</strong> bzw. <strong>Groq</strong> (Server in den USA) gesendet. Bei Aufnahmen mit anderen Personen bitte deren Einverständnis einholen.</p>
       </div>
     </section>
 

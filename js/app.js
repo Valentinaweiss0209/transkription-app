@@ -1,11 +1,16 @@
 // --- State ---
 let selectedFile = null;
-let apiKey = localStorage.getItem("groq_api_key") || "";
 
 // --- DOM ---
-const apiKeyInput = document.getElementById("api-key");
-const saveKeyBtn = document.getElementById("save-key-btn");
-const keyStatus = document.getElementById("key-status");
+const providerSelect = document.getElementById("provider");
+const groqKeySection = document.getElementById("groq-key-section");
+const falKeySection = document.getElementById("fal-key-section");
+const groqKeyInput = document.getElementById("groq-api-key");
+const falKeyInput = document.getElementById("fal-api-key");
+const saveGroqKeyBtn = document.getElementById("save-groq-key");
+const saveFalKeyBtn = document.getElementById("save-fal-key");
+const groqKeyStatus = document.getElementById("groq-key-status");
+const falKeyStatus = document.getElementById("fal-key-status");
 const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const fileInfo = document.getElementById("file-info");
@@ -24,26 +29,75 @@ const transcript = document.getElementById("transcript");
 const copyBtn = document.getElementById("copy-btn");
 const downloadBtn = document.getElementById("download-btn");
 
-// --- Init ---
-if (apiKey) {
-  apiKeyInput.value = apiKey;
-  keyStatus.textContent = "Key gespeichert";
-  keyStatus.className = "status-text success";
+// --- Init: Keys laden ---
+const savedGroqKey = localStorage.getItem("groq_api_key") || "";
+const savedFalKey = localStorage.getItem("fal_api_key") || "";
+
+if (savedGroqKey) {
+  groqKeyInput.value = savedGroqKey;
+  groqKeyStatus.textContent = "Key gespeichert";
+  groqKeyStatus.className = "status-text success";
 }
+if (savedFalKey) {
+  falKeyInput.value = savedFalKey;
+  falKeyStatus.textContent = "Key gespeichert";
+  falKeyStatus.className = "status-text success";
+}
+
+updateProviderUI();
 updateStartButton();
 
-// --- API Key ---
-saveKeyBtn.addEventListener("click", () => {
-  const key = apiKeyInput.value.trim();
+// --- Provider Switch ---
+providerSelect.addEventListener("change", () => {
+  updateProviderUI();
+  updateModelOptions();
+  updateStartButton();
+});
+
+function updateProviderUI() {
+  const provider = providerSelect.value;
+  groqKeySection.classList.toggle("hidden", provider !== "groq");
+  falKeySection.classList.toggle("hidden", provider !== "fal");
+}
+
+function updateModelOptions() {
+  const provider = providerSelect.value;
+  if (provider === "fal") {
+    modelSelect.innerHTML = `
+      <option value="fal-ai/whisper" selected>Whisper Large v3 (fal.ai)</option>
+    `;
+  } else {
+    modelSelect.innerHTML = `
+      <option value="whisper-large-v3" selected>Whisper Large v3 (beste Qualität)</option>
+      <option value="whisper-large-v3-turbo">Whisper Large v3 Turbo (schneller)</option>
+    `;
+  }
+}
+
+// --- API Keys speichern ---
+saveGroqKeyBtn.addEventListener("click", () => {
+  const key = groqKeyInput.value.trim();
   if (!key.startsWith("gsk_")) {
-    keyStatus.textContent = "Ungültiger Key — muss mit gsk_ beginnen";
-    keyStatus.className = "status-text error";
+    groqKeyStatus.textContent = "Ungültiger Key — muss mit gsk_ beginnen";
+    groqKeyStatus.className = "status-text error";
     return;
   }
-  apiKey = key;
   localStorage.setItem("groq_api_key", key);
-  keyStatus.textContent = "Key gespeichert";
-  keyStatus.className = "status-text success";
+  groqKeyStatus.textContent = "Key gespeichert";
+  groqKeyStatus.className = "status-text success";
+  updateStartButton();
+});
+
+saveFalKeyBtn.addEventListener("click", () => {
+  const key = falKeyInput.value.trim();
+  if (!key) {
+    falKeyStatus.textContent = "Bitte Key eingeben";
+    falKeyStatus.className = "status-text error";
+    return;
+  }
+  localStorage.setItem("fal_api_key", key);
+  falKeyStatus.textContent = "Key gespeichert";
+  falKeyStatus.className = "status-text success";
   updateStartButton();
 });
 
@@ -81,15 +135,10 @@ removeFileBtn.addEventListener("click", () => {
 });
 
 function handleFile(file) {
-  const validTypes = [
-    "audio/mpeg", "audio/mp3", "audio/mp4", "audio/m4a", "audio/x-m4a",
-    "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm",
-    "video/mp4", "video/webm", "video/quicktime",
-  ];
   const ext = file.name.split(".").pop().toLowerCase();
   const validExts = ["mp3", "mp4", "m4a", "wav", "ogg", "webm", "mov"];
 
-  if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+  if (!validExts.includes(ext)) {
     alert("Dieses Dateiformat wird nicht unterstützt.\nErlaubt: MP3, MP4, M4A, WAV, OGG, WEBM");
     return;
   }
@@ -105,40 +154,172 @@ function handleFile(file) {
 startBtn.addEventListener("click", startTranscription);
 
 async function startTranscription() {
-  if (!selectedFile || !apiKey) return;
+  if (!selectedFile) return;
+
+  const provider = providerSelect.value;
+  const apiKey = provider === "groq"
+    ? (groqKeyInput.value.trim() || localStorage.getItem("groq_api_key"))
+    : (falKeyInput.value.trim() || localStorage.getItem("fal_api_key"));
+
+  if (!apiKey) return;
 
   startBtn.disabled = true;
   progressSection.classList.remove("hidden");
   resultSection.classList.add("hidden");
 
   try {
-    const MAX_CHUNK_SIZE = 24 * 1024 * 1024; // 24 MB (Groq limit: 25 MB)
-
-    if (selectedFile.size <= MAX_CHUNK_SIZE) {
-      updateProgress(10, "Transkription läuft...");
-      const result = await transcribeChunk(selectedFile, 0, 1);
-      showResult(result);
+    if (provider === "fal") {
+      await transcribeWithFal(apiKey);
     } else {
-      updateProgress(0, "Große Datei — wird in Teile aufgeteilt...");
-      const chunks = splitFile(selectedFile, MAX_CHUNK_SIZE);
-      const results = [];
-
-      for (let i = 0; i < chunks.length; i++) {
-        updateProgress(
-          (i / chunks.length) * 100,
-          `Teil ${i + 1} von ${chunks.length} wird transkribiert...`
-        );
-        const result = await transcribeChunk(chunks[i], i, chunks.length);
-        results.push(result);
-      }
-
-      showResult(results.join("\n\n"));
+      await transcribeWithGroq(apiKey);
     }
   } catch (err) {
     updateProgress(0, `Fehler: ${err.message}`);
     progressText.style.color = "#ef4444";
   } finally {
     startBtn.disabled = false;
+  }
+}
+
+// ==========================================
+// FAL.AI TRANSCRIPTION
+// ==========================================
+
+async function transcribeWithFal(apiKey) {
+  // Schritt 1: Datei zu fal.ai CDN hochladen
+  updateProgress(20, "Datei wird hochgeladen...");
+  const audioUrl = await uploadToFal(apiKey, selectedFile);
+
+  // Schritt 2: Transkription starten
+  updateProgress(50, "Transkription läuft...");
+  const language = languageSelect.value;
+
+  const body = {
+    audio_url: audioUrl,
+    task: "transcribe",
+    chunk_level: "segment",
+    batch_size: 64,
+  };
+
+  if (language !== "auto") {
+    body.language = language;
+  }
+
+  const response = await fetch("https://fal.run/fal-ai/whisper", {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    let errorMsg;
+    try {
+      const errData = JSON.parse(responseText);
+      errorMsg = errData.detail || errData.message || responseText;
+    } catch {
+      errorMsg = responseText;
+    }
+    throw new Error(`fal.ai Fehler (${response.status}): ${errorMsg}`);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error("Ungültige Antwort von fal.ai");
+  }
+
+  // Timestamps formatieren
+  if (timestampsCheckbox.checked && data.chunks && data.chunks.length > 0) {
+    const text = data.chunks
+      .map((chunk) => {
+        const start = chunk.timestamp?.[0] ?? 0;
+        return `[${formatTimestamp(start)}] ${chunk.text.trim()}`;
+      })
+      .join("\n");
+    showResult(text);
+  } else {
+    showResult(data.text || "");
+  }
+}
+
+async function uploadToFal(apiKey, file) {
+  // Initiate upload um eine signed URL zu bekommen
+  const initResponse = await fetch("https://rest.fal.run/fal-ai/whisper/storage/upload/initiate", {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      file_name: file.name,
+      content_type: file.type || "audio/mpeg",
+    }),
+  });
+
+  if (!initResponse.ok) {
+    // Fallback: Datei als Data-URL senden
+    return await fileToDataUrl(file);
+  }
+
+  const initData = await initResponse.json();
+  const uploadUrl = initData.upload_url;
+  const fileUrl = initData.file_url;
+
+  // Datei hochladen
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "audio/mpeg" },
+    body: file,
+  });
+
+  if (!uploadResponse.ok) {
+    return await fileToDataUrl(file);
+  }
+
+  return fileUrl;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ==========================================
+// GROQ TRANSCRIPTION
+// ==========================================
+
+async function transcribeWithGroq(apiKey) {
+  const MAX_CHUNK_SIZE = 24 * 1024 * 1024;
+
+  if (selectedFile.size <= MAX_CHUNK_SIZE) {
+    updateProgress(10, "Transkription läuft...");
+    const result = await groqTranscribeChunk(apiKey, selectedFile, 0, 1);
+    showResult(result);
+  } else {
+    updateProgress(0, "Große Datei — wird in Teile aufgeteilt...");
+    const chunks = splitFile(selectedFile, MAX_CHUNK_SIZE);
+    const results = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      updateProgress(
+        (i / chunks.length) * 100,
+        `Teil ${i + 1} von ${chunks.length} wird transkribiert...`
+      );
+      const result = await groqTranscribeChunk(apiKey, chunks[i], i, chunks.length);
+      results.push(result);
+    }
+
+    showResult(results.join("\n\n"));
   }
 }
 
@@ -150,17 +331,14 @@ function splitFile(file, maxSize) {
   while (offset < file.size) {
     const end = Math.min(offset + maxSize, file.size);
     const blob = file.slice(offset, end);
-    const chunkFile = new File([blob], `chunk_${chunks.length}.${ext}`, {
-      type: file.type,
-    });
-    chunks.push(chunkFile);
+    chunks.push(new File([blob], `chunk_${chunks.length}.${ext}`, { type: file.type }));
     offset = end;
   }
 
   return chunks;
 }
 
-async function transcribeChunk(file, index, total) {
+async function groqTranscribeChunk(apiKey, file, index, total) {
   const language = languageSelect.value;
 
   const formData = new FormData();
@@ -171,14 +349,11 @@ async function transcribeChunk(file, index, total) {
   }
   formData.append("response_format", "verbose_json");
 
-  // Direkt an Groq API senden (CORS wird unterstützt)
   const response = await fetch(
     "https://api.groq.com/openai/v1/audio/transcriptions",
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { Authorization: `Bearer ${apiKey}` },
       body: formData,
     }
   );
@@ -208,7 +383,6 @@ async function transcribeChunk(file, index, total) {
     index + 1 === total ? "Fertig!" : `Teil ${index + 1} von ${total} fertig`
   );
 
-  // Timestamps formatieren wenn gewünscht
   if (timestampsCheckbox.checked && data.segments && data.segments.length > 0) {
     return data.segments
       .map((seg) => `[${formatTimestamp(seg.start)}] ${seg.text.trim()}`)
@@ -218,7 +392,10 @@ async function transcribeChunk(file, index, total) {
   return data.text || "";
 }
 
-// --- Result ---
+// ==========================================
+// RESULT & HELPERS
+// ==========================================
+
 function showResult(text) {
   transcript.value = text;
   resultSection.classList.remove("hidden");
@@ -245,9 +422,12 @@ downloadBtn.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-// --- Helpers ---
 function updateStartButton() {
-  startBtn.disabled = !selectedFile || !apiKey;
+  const provider = providerSelect.value;
+  const hasKey = provider === "groq"
+    ? !!(groqKeyInput.value.trim() || localStorage.getItem("groq_api_key"))
+    : !!(falKeyInput.value.trim() || localStorage.getItem("fal_api_key"));
+  startBtn.disabled = !selectedFile || !hasKey;
 }
 
 function updateProgress(percent, text) {
