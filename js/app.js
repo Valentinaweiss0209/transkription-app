@@ -198,29 +198,21 @@ async function transcribeWithFal(apiKey) {
   const language = languageSelect.value;
   const contentType = selectedFile.type || "audio/mp4";
 
-  // Debug: Key prüfen
-  console.log("fal.ai Key Länge:", apiKey.length, "Hat Doppelpunkt:", apiKey.includes(":"));
-
-  // Schritt 1: Upload initiieren
+  // Schritt 1: Upload initiieren (über Netlify Function — kein CORS-Problem)
   updateProgress(10, "Upload wird vorbereitet...");
-  const initResponse = await fetch(
-    "https://rest.fal.ai/storage/upload/initiate?storage_type=fal-cdn-v3",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Key ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        file_name: selectedFile.name,
-        content_type: contentType,
-      }),
-    }
-  );
+  const initResponse = await fetch("/api/fal-upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: apiKey,
+      file_name: selectedFile.name,
+      content_type: contentType,
+    }),
+  });
 
   if (!initResponse.ok) {
     const errText = await initResponse.text();
-    throw new Error(`Upload-Init fehlgeschlagen (Key: ${apiKey.substring(0,8)}...): ${errText}`);
+    throw new Error(`Upload-Init fehlgeschlagen: ${errText}`);
   }
 
   const { upload_url, file_url } = await initResponse.json();
