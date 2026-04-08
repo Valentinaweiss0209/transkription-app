@@ -250,13 +250,14 @@ async function transcribeWithFal(apiKey) {
 
   let response;
   try {
-    response = await fetch(`https://fal.run/${falModel}`, {
+    response = await fetch("/api/fal-transcribe", {
       method: "POST",
-      headers: {
-        Authorization: `Key ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        model: falModel,
+        input,
+      }),
     });
   } catch (fetchErr) {
     throw new Error(`Transkription Netzwerkfehler: ${fetchErr.message}`);
