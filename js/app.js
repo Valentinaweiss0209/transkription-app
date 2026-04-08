@@ -14,6 +14,7 @@ const fileSize = document.getElementById("file-size");
 const removeFileBtn = document.getElementById("remove-file");
 const languageSelect = document.getElementById("language");
 const modelSelect = document.getElementById("model");
+const timestampsCheckbox = document.getElementById("timestamps");
 const startBtn = document.getElementById("start-btn");
 const progressSection = document.getElementById("progress-section");
 const progressBar = document.getElementById("progress-bar");
@@ -207,6 +208,13 @@ async function transcribeChunk(file, index, total) {
     index + 1 === total ? "Fertig!" : `Teil ${index + 1} von ${total} fertig`
   );
 
+  // Timestamps formatieren wenn gewünscht
+  if (timestampsCheckbox.checked && data.segments && data.segments.length > 0) {
+    return data.segments
+      .map((seg) => `[${formatTimestamp(seg.start)}] ${seg.text.trim()}`)
+      .join("\n");
+  }
+
   return data.text || "";
 }
 
@@ -251,4 +259,14 @@ function updateProgress(percent, text) {
 function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatTimestamp(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
