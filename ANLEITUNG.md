@@ -49,12 +49,14 @@ Du kopierst die fertige App und veröffentlichst sie unter deiner eigenen URL. K
 
 1. Öffne deine neue URL
 2. Anbieter: **fal.ai** ist vorausgewählt (empfohlen)
-3. Gib deinen fal.ai Key ein → **Speichern**
+3. Gib deinen fal.ai Key ein → **Speichern** — das Eingabefeld klappt sich ein
 4. Ziehe eine Audio- oder Videodatei rein (Drag & Drop oder klicken)
 5. Sprache wählen (Standard: Deutsch)
 6. Optional: Timestamps aktivieren
 7. Klicke **Transkription starten**
 8. Fertig — Transkript erscheint, kann kopiert oder als .txt heruntergeladen werden
+
+**Key-Verwaltung:** Nach dem Speichern zeigt die App zwei Buttons: **Key ändern** (zum Bearbeiten) und **Key löschen** (zum Entfernen). Dein Key bleibt in deinem Browser gespeichert und muss nicht jedes Mal neu eingegeben werden.
 
 ### Optional: URL anpassen
 
