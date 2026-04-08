@@ -471,6 +471,44 @@ header h1 {
   padding-left: 1.85rem;
 }
 
+/* Info card */
+.card-info {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  background: var(--gold-ultra-light);
+  border: 1px solid rgba(201, 171, 76, 0.25);
+}
+
+.info-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-title {
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  color: var(--gold-dark) !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.info-text {
+  font-size: 0.8rem !important;
+  line-height: 1.6 !important;
+  color: var(--text-body) !important;
+  margin-bottom: 0 !important;
+}
+
+.info-text a {
+  color: var(--berry) !important;
+  font-weight: 600;
+}
+
 /* Progress */
 .progress-bar-container {
   width: 100%;
